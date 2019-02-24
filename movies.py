@@ -1,11 +1,14 @@
-# Import Pandas
+#data from https://www.kaggle.com/rounakbanik/the-movies-dataset/data
+#pandas, sklearn
+
+# Import pandas
 import pandas as pd
 import csv
-# Load Movies Metadata
+# Read data
 metadata = pd.read_csv('movies_metadata.csv', low_memory=False)
 
-# Print the first three rows
-print(metadata.head(3))
+# Print the first several rows
+print(metadata.head())
 
 #Weighted Rating (WR) = (v/(v+m)*R)+(m/(v+m)*C)
 #where,
@@ -46,7 +49,7 @@ print(q_movies[['title', 'vote_count', 'vote_average', 'score']].head(20))
 print(metadata['overview'].head())
 
 
-#Import TfIdfVectorizer from scikit-learn
+#Import TfIdfVectorizer from sklearn
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 #Define a TF-IDF Vectorizer Object. Remove all english stop words such as 'the', 'a'
