@@ -98,4 +98,4 @@ def get_recommendations(title, cosine_sim=cosine_sim):
     # Return the top 10 most similar movies
     return metadata['title'].iloc[movie_indices]
 
-print(get_recommendations('The Dark Knight Rises'))
+print(get_recommendations('...name..'))
