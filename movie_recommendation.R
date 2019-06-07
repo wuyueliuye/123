@@ -1,0 +1,197 @@
+getwd()
+setwd('C:/Users/guang/Desktop/MyNIU/R')
+movies <- read.csv('movies.csv')
+ratings <- read.csv('ratings.csv')
+users <- read.csv('users.csv')
+str(ratings)
+str(movies)
+
+head(movies)
+head(ratings)
+head(users)
+# combine movies and ratings
+movie_rating <- movies %>% left_join(ratings, by = 'movieId')
+head(movie_rating)
+str(movie_rating)
+
+# combine 3 datasets into 1
+user_movie_rating <- users %>% left_join(ratings, by = 'userId') %>% inner_join(movies, by = 'movieId') 
+head(user_movie_rating)
+
+# filter for users rate frequently
+(filter1 <- user_movie_rating
+  %>% group_by(userId) %>% summarise(cnt_user_rating = n())
+  %>% filter(cnt_user_rating >= 5 & cnt_user_rating <= 500 ) 
+  
+ )
+
+filtered_user_movie_rating_1 <- user_movie_rating %>% inner_join(filter1, by = 'userId')
+summary(filtered_user_movie_rating_1)
+
+# filter for movies with large rating samples
+(filter2 <-user_movie_rating 
+  %>% group_by(title) %>% summarise(cnt_movie_rating_freq = n())
+  %>% filter(cnt_movie_rating_freq > 100)
+
+  
+)
+filtered_user_movie_rating_2 <- filtered_user_movie_rating_1 %>% inner_join(filter2, by = 'title')
+
+summary(filtered_user_movie_rating_2)
+str(filtered_user_movie_rating_2)
+
+# filter for newer rating results
+(filtered_user_movie_rating_3 <- filtered_user_movie_rating_2 %>% mutate(date = as_datetime(timestamp))
+  %>% filter(date >= '2000-01-01')
+  
+  )
+
+# split movie title into title name & year, then save as new columns 
+(filtered_user_movie_rating_4 <-  filtered_user_movie_rating_3 
+  %>% extract(title, c("title_nm", "year"), regex = "^(.*) \\(([0-9 \\-]*)\\)$", remove = F)
+  )
+na.omit(filtered_user_movie_rating_4, c('title_nm', 'year'))
+
+filtered_user_movie_rating <- filtered_user_movie_rating_4
+# the filtered_user_movie_rating dataset is the data filtering out the missing values, old ratings, small rating sample movies, and less rating experience users
+
+# top rating movies
+(
+  movies_by_avg_rating <- movie_rating
+  %>% group_by(name) %>% summarise(avg_rating = mean(rating.y), cnt_rating = n())
+  %>% filter(cnt_rating > 50)
+  %>% arrange(desc(avg_rating))
+)
+
+head(movies_by_avg_rating, 10)
+
+# top popular movies
+(
+  movies_by_popularity <- movie_rating
+  %>% group_by(name) %>% summarise(cnt_rating = n())
+  %>% arrange(desc(cnt_rating))
+)
+
+head(movies_by_popularity, 10)
+
+# number of movies per year table & plot
+(
+  cnt_movies_per_year <- movies
+  %>% extract(name, c('name_nm', 'year'), regex = "^(.*) \\(([0-9 \\-]*)\\)$", remove = F)
+  %>% group_by(year) %>% summarise(cnt_movies  = n()) %>% arrange(year)
+                                                                    
+)
+na.omit(cnt_movies_per_year$year)
+cnt_movies_per_year$year <- as.numeric(cnt_movies_per_year$year)
+
+library(ggplot2)
+
+(plt_cnt_movies_per_year <- cnt_movies_per_year %>%
+  ggplot(aes(x = year, y=cnt_movies)) +
+  geom_line(binwidth = 10, color = 'purple') 
+)
+plt_cnt_movies_per_year
+
+# number of movies by genres per year table & plot 
+(
+  cnt_movies_per_year_by_genres <- movies %>% extract(name, c('name_nm', 'year'), regex = "^(.*) \\(([0-9 \\-]*)\\)$", remove = F)
+  %>% group_by(year,genre) %>% summarise(cnt_by_year_genres = n())
+  %>% filter(genre != '(no genres listed)')
+  %>% arrange(year)
+)
+cnt_movies_per_year_by_genres$year <- as.numeric(cnt_movies_per_year_by_genres$year)
+na.omit(cnt_movies_per_year_by_genres$year)      
+
+
+(plt_cnt_movies_per_year_by_genres <- cnt_movies_per_year_by_genres %>%
+    ggplot(aes(x = year, y=cnt_by_year_genres)) +
+    geom_line(binwidth = 10, aes(color = genre))
+    
+)
+
+str(movie_rating)
+#summary for budget,country,genre,imdb_rating,score,imdb_rating,age,sex,occupation,Music,
+summary(movie_rating)
+
+
+user_movie_rating_1 <- movie_rating %>% inner_join(users, by = 'userId')
+user_movie_rating_1 <- user_movie_rating_1 %>% mutate(high_rating = ifelse(rating.y >= 4, 1, 0))
+user_movie_rating_1$high_rating <- as.factor(user_movie_rating_1$high_rating)
+str(user_movie_rating_1)
+(reduced_user_movie_rating <- 
+    select(user_movie_rating_1,
+    -userId,-movieId,-rating.y,-timestamp,-director,-gross,-name,-studio,-zipcode,-runtime,
+    - star, -votes, -Camping.Hiking, -Concerts, -Clubs.Dancing, -Writing, -Sports, -Gardening,
+    -Art, -Shopping, -Social.Media, -Reading, -Socializing, -Gaming, -Clothing.Spending)
+  
+  )
+names(reduced_user_movie_rating)
+df <- reduced_user_movie_rating
+
+library(caret)
+# training & teating data spliting
+index <- createDataPartition(df$high_rating, p=0.8, list = F)
+training <- df[index,]
+testing <- df[-index,]
+nrow(training)
+nrow(testing)
+
+# glm to fit the training dataset
+fit1 <- glm(high_rating~., family = 'binomial', data=df)
+summary(fit1)
+# test the fit by predict the test dataset and calculate accuracy, precision, recall, etc,. by confusionmatrix
+testing$pred <- predict(fit1, newdata = testing)
+mytab <- table(testing$high_rating, ifelse(testing$pred>0.5, 1, 0))
+confusionMatrix(mytab, positive = '1')
+
+stepwised_fit <- step(fit1)
+summary(stepwised_fit)
+
+# create baseline random forest, Create model with default paramters
+control <- trainControl(method="repeatedcv", number=10, repeats=3) #cross validation
+seed <- 1234
+metric <- "Accuracy"
+set.seed(seed)
+mtry <- sqrt(ncol(training)-1)
+tunegrid <- expand.grid(.mtry=mtry)
+rf_default <- train(high_rating~., data=training, method="rf", metric=metric, tuneGrid=tunegrid, trControl=control)
+print(rf_default) 
+
+#grid search 
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+set.seed(seed)
+tunegrid <- expand.grid(.mtry=seq(1,14,2)) #ntree = c(200, 500,1000)
+rf_gridsearch <- train(high_rating~., data=training, method="rf", metric=metric, tuneGrid=tunegrid, trControl=control)
+print(rf_gridsearch)
+plot(rf_gridsearch)
+
+
+# collaborative filtering
+#Create ratings matrix. Rows = userId, Columns = movieId
+ratingmat <- dcast(ratings, userId~movieId, value.var = "rating", na.rm=FALSE)
+ratingmat <- as.matrix(ratingmat[,-1]) #remove userIds
+
+
+#Convert rating matrix into a recommenderlab sparse matrix
+ratingmat <- as(ratingmat, "realRatingMatrix")
+
+#Normalize the data
+ratingmat_norm <- normalize(ratingmat)
+#View(ratingmat_norm)
+
+#Create Recommender Model. "UBCF" stands for User-Based Collaborative Filtering
+recommender_model <- Recommender(ratingmat_norm, method = "UBCF", param=list(method="Cosine",nn=30))
+recom <- predict(recommender_model, ratingmat[1], n=10) #Obtain top 10 recommendations for 1st user in dataset
+recom_list <- as(recom, "list") #convert recommenderlab object to readable list
+
+#Obtain recommendations
+recom_result <- matrix(0,10)
+for (i in c(1:10)){
+  recom_result[i] <- movies[as.integer(recom_list[[1]][i]),2]
+}
+
+#evaluation 
+evaluation_scheme <- evaluationScheme(ratingmat, method="cross-validation", k=5, given=2, goodRating=5) #k=5 meaning a 5-fold cross validation. given=3 meaning a Given-3 protocol
+evaluation_results <- evaluate(evaluation_scheme, method="UBCF", n=c(1,3,5,10,15,20))
+eval_results <- getConfusionMatrix(evaluation_results)[[1]]
+eval_results
