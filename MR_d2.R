@@ -134,7 +134,7 @@ sim_df <- as.data.frame(cos_sim_mat)
 content_recommender <- function(title, rec_num=10, description=F){
   
   if (description==F) {description <- NULL}
-  else description='descripton'
+  else description='description'
   
   sim_scores <- as.vector(t(sim_df[which(titles==title),]))
   sim_by_idx <- order(sim_scores,decreasing = T)
@@ -147,7 +147,7 @@ content_recommender <- function(title, rec_num=10, description=F){
 content_recommender('Toy Story',5)
 
 
-#### Collaborative-Filtering (User-Based CF/ Item-Based CF/ SVD Approximation) ####
+#### Collaborative-Filtering (User-Based CF) ####
 rating <- read.csv('ratings_small.csv')
 id_rating_temp <- merge(link, rating, by='movieId')
 movie_rating <- merge(movie1, id_rating_temp, by='movieId')
@@ -175,36 +175,8 @@ UBCF_Recommender <- function(userId, rec_num=10, description=F){
 
 UBCF_Recommender(11,5,T)
 
-#### Hybrid Recommender (ContentBased + CollaborativeFiltering)####
 
-hybrid_recommender_draft <- function(userId, title, rec_num, description=F){
-  if (description==F) {description <- NULL}
-  else description='descripton'
-  
-  sim_scores <- as.vector(t(sim_df[which(titles==title),]))
-  sim_by_idx <- order(sim_scores, decreasing = T)
-  rec_idx <- sim_by_idx[2:51]
-  rec_step1 <- movie1[rec_idx, c('movieId', 'title', 'release_year', 'genres1','description')]
-  
-  rec_step1.2 <- merge(rec_step1, id_rating_temp, by='movieId')
-  
-  cf_df <- reshape2::dcast(rec_step1.2, userId~movieId, value.var='rating')
-  cf_mat <- as.matrix(cf_df[,-1])
-  cf_mat <- as(cf_mat, "realRatingMatrix")
-  # cf_mat_norm <- normalize(cf_mat)
-  ubcf_model <- recommenderlab::Recommender(cf_mat, method='UBCF', param='cosine')
-  
-  rec_step2 <- predict(ubcf_model, cf_mat[userId], n=rec_num)
-  
-  rec_list <- as(rec_step2, 'list')
-  rec_movieId <- rec_list[[1]]
-  rec_movies <- rec_step1.2[rec_step1.2$movieId %in% rec_movieId, c('title','release_year', 'genres1', description)]
-  rec_movies <- unique(rec_movies)
-  row.names(rec_movies) <- NULL
-  return(rec_movies)
-  
-}
-hybrid_recommender_draft(55, titles[100], 5)
+#### Hybrid Recommender (ContentBased + CollaborativeFiltering)####
 
 hybrid_recommender <- function(userId, title, rec_num, description=F){
   
