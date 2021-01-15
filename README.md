@@ -8,6 +8,4 @@
 
 [Elerly People's Living Arrangement Prediction](https://github.com/wuyueliuye/MyPractice/blob/master/AgingProject.pdf)
 
-[Market Research for DiDi]()
-
-[Sentiment Analysis]()
+[ELC Project Management Consulting](https://github.com/wuyueliuye/MyPractice/tree/master/Reference-files)
