@@ -1,0 +1,15 @@
+##################################################
+Datasets:
+##################################################
+CA_updated.xlsx: cannabis cultivation license types for CA
+loc-early_new_ballot_states.csv: location information for existing cannabis greenhouses in early, new and ballot states
+market_data_w_purchse_information_new.csv: main dataset with impactable variables by states
+sorted_capita_spending_by_state.csv: ordered resourced data about the estimated capita spending on cannabis in 2024
+sorted_state_spending.csv: ordered estimated state level cannabis spending in 2024
+
+##################################################
+Algorithmic analytics & output files:
+##################################################
+MarketResearch-DataPrepare.html: data preparations for the analytics on market research component
+MarketResearch-Analytics.html: analytics including modeling and predicting on market research component
+MarketResearch-Visualization.html: graph and map visualizations for the market research component
