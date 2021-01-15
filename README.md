@@ -4,7 +4,7 @@
 
 [Hourly Energy Consumption Forecast](https://github.com/wuyueliuye/MyPractice/blob/master/hourly_energy_consumption.pdf)
 
-[MovieLens Recommender System Prediction](https://github.com/wuyueliuye/MyPractice/blob/master/movie_recommendation.R)
+[Movie Recommender System](https://github.com/wuyueliuye/MyPractice/blob/master/movie_recommendation.R)
 
 [Elerly People's Living Arrangement Prediction](https://github.com/wuyueliuye/MyPractice/blob/master/AgingProject.pdf)
 
